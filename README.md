@@ -1,1 +1,1 @@
-# VKGJ
+# VKJam
