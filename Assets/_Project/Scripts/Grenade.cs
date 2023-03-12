@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Codice.Client.BaseCommands;
@@ -12,6 +13,7 @@ namespace _Project.Scripts
         [SerializeField] [Range(0, 100f)] private float maxDamage;
         [SerializeField] [Range(0, 1000f)] private float blastForce;
         [SerializeField]  ContactFilter2D blastContactFilter;
+        private bool _isTriggered = false;
         private Collider2D _blastZone;
 
         void Awake()
@@ -21,6 +23,9 @@ namespace _Project.Scripts
         
         public void Interact()
         {
+            if (_isTriggered) return;
+                
+            _isTriggered = true;
             StartCoroutine(Trigger());
         }
 
@@ -36,13 +41,26 @@ namespace _Project.Scripts
             _blastZone.OverlapCollider(blastContactFilter, contacts);
             foreach (var contact in contacts)
             {
-                // var damageable = contact.gameObject.GetComponent<IDamageable>();
-                // if (damageable == null) continue;
-                // var distance = damageable.gameObject.transform.position - transform.position;
-                // damageable.TakeDamage(maxDamage * Mathf.Min(radius - distance, 0) / radius)
+                var damageableObj = contact.gameObject;
+                var damageable = damageableObj.GetComponent<IDamageable>();
+                if (damageable == null) continue;
+                var distance = damageableObj.transform.position - transform.position;
+                var distanceCoefficient = Mathf.Min(radius - distance.magnitude, 0) / radius;
+                damageable.TakeDamage(maxDamage * distanceCoefficient);
+                
+                var damageableRb = damageableObj.GetComponent<Rigidbody2D>();
+                if (damageableRb == null) yield break;
+                damageableRb.AddForce(distanceCoefficient * blastForce * distance.normalized, ForceMode2D.Impulse);
+                Debug.Log(distanceCoefficient * blastForce * distance.normalized);
             }
             
             Destroy(gameObject);
+        }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = _isTriggered ? Color.cyan : Color.gray;
+            Gizmos.DrawWireSphere(transform.position, radius);
         }
     }
 }

@@ -36,8 +36,9 @@ namespace _Project.Scripts
 
         private bool _isHoldingObject;
         private Rigidbody2D _heldObjectRb;
-        private Joint2D _heldObjectJoint;
-        private List<Collider2D> collisions = new List<Collider2D>();
+        private FixedJoint2D _heldObjectFixedJoint;
+        private HingeJoint2D _heldObjectHingeJoint;
+        private AnchoredJoint2D _heldObjectJoint;
 
         private void Awake()
         {
@@ -50,11 +51,15 @@ namespace _Project.Scripts
             a = _forearmLength;
             b = _armLength;
 
-            _heldObjectJoint = GetComponent<Joint2D>();
-            _heldObjectJoint.enabled = false;
-            _heldObjectJoint.connectedBody = null;
+            _heldObjectFixedJoint = GetComponent<FixedJoint2D>();
+            _heldObjectHingeJoint = GetComponent<HingeJoint2D>();
+            // _heldObjectJoint = GetComponent<HingeJoint2D>();
+            _heldObjectFixedJoint.enabled = false;
+            _heldObjectHingeJoint.enabled = false;
+            _heldObjectFixedJoint.connectedBody = null;
+            _heldObjectHingeJoint.connectedBody = null;
 
-            _spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
+            _spriteRenderer = gameObject.GetComponentInChildren<SpriteRenderer>();
         }
 
         void Update()
@@ -62,6 +67,13 @@ namespace _Project.Scripts
             CalculateDistances();
 
             CalculateInverseKinematics();
+
+            // Debug.Log(_handToMouse.magnitude);
+            // if (_handToMouse.magnitude <= 0.05f || _rigidbody.velocity.magnitude <= 0.05f)
+            // {
+                // _rigidbody.MovePosition(_playerBody.position + _bodyToMouse);
+                // _rigidbody.velocity = Vector3.zero;
+            // }
 
             if (Input.GetMouseButton(0))
             {
@@ -72,24 +84,41 @@ namespace _Project.Scripts
                     contacts = contacts.Where(x => x.gameObject != gameObject).ToList();
                     if (contacts.Count != 0)
                     {
-                        _heldObjectRb = contacts[0].gameObject.GetComponent<Rigidbody2D>();
+                        _heldObjectRb = contacts[0].gameObject.GetComponentInParent<Rigidbody2D>();
+                        _heldObjectJoint = _heldObjectRb.mass >= _playerBody.mass
+                            ? _heldObjectHingeJoint
+                            : _heldObjectFixedJoint;
                         _heldObjectJoint.enabled = true;
                         _heldObjectJoint.connectedBody = _heldObjectRb;
                         _isHoldingObject = true;
+                        _heldObjectJoint.autoConfigureConnectedAnchor = true;
                         // проблема в том, что можно отталкиваться от предмета, который держишь в руке
-                        var interactable = _heldObjectRb.GetComponent<IInteractable>();
+                        _rigidbody.gravityScale = 0;
+                        var interactable = _heldObjectRb.GetComponentInParent<IInteractable>();
                         if(interactable != null)
                             interactable.Interact();
                     }
+                    else
+                    {
+                        _rigidbody.gravityScale = 1;
+                    }
                 }
-                
+                else
+                {
+                    _heldObjectJoint.autoConfigureConnectedAnchor = false;
+                }
                 _spriteRenderer.sprite = _palmClosed;
             }
             else
             {
+                _rigidbody.gravityScale = 1;
                 _heldObjectRb = null;
-                _heldObjectJoint.connectedBody = null;
-                _heldObjectJoint.enabled = false;
+                if (_heldObjectJoint != null)
+                {
+                    _heldObjectJoint.connectedBody = null;
+                    _heldObjectJoint.enabled = false;
+                    // _heldObjectJoint = null;
+                }
                 _isHoldingObject = false;
                 _spriteRenderer.sprite = _palmOpen;
             }
@@ -123,6 +152,7 @@ namespace _Project.Scripts
             var forearmRotation = Quaternion.AngleAxis(theta + beta, Vector3.forward);
             var armRotation = Quaternion.AngleAxis(theta - alpha, Vector3.forward);
 
+            transform.rotation = Quaternion.AngleAxis(theta, Vector3.forward);
             _forearmJoint.rotation = forearmRotation;
             _armJoint.rotation = armRotation;
         }
@@ -136,41 +166,21 @@ namespace _Project.Scripts
             var horizontalForce = linearForce.x * _horizontalForceModifier;
             var force = verticalForce * Vector2.up + horizontalForce * Vector2.right;
 
-            // var colliders = new List<Collider2D>();
-            // _handCollider.GetContacts(_interactibleFilter, colliders);
-            // var collider = colliders.Find(x => x.gameObject == _heldObjectRb.gameObject);
-            // collider.
-            //     foreach (var col in colliders)
-            //     {
-            //         col.gameObject.GetComponent<Rigidbody2D>().AddForce(-force * Time.fixedDeltaTime, ForceMode2D.Force);
-            //     }
-            
             _playerBody.AddForce(force * Time.fixedDeltaTime, ForceMode2D.Force);
 
             if (_isHoldingObject)
             {
                 _heldObjectRb.AddForce(-force * Time.fixedDeltaTime, ForceMode2D.Force);
-                _rigidbody.AddForce(_handToMouse.normalized * _handSpeed * Time.fixedDeltaTime / _heldObjectRb.mass, ForceMode2D.Force);
+                _rigidbody.AddForce((_rigidbody.mass / _rigidbody.mass + _heldObjectRb.mass) * _handSpeed * Time.fixedDeltaTime * _handToMouse.normalized, ForceMode2D.Force);
                 // _heldObjectRb.MovePosition(_rigidbody.position);
                 // _heldObjectJoint.anchor = transform.InverseTransformPoint(transform.position);
             }
-
-            // if (_isColliding)
-            // {
-                // var colliders = new List<Collider2D>();
-                // _handCollider.GetContacts(_interactibleFilter, colliders);
-                // colliders.Add(_heldObjectRb.gameObject.GetComponent<Collider2D>());
-                // colliders = colliders.Where(x => x.gameObject.GetComponent<Rigidbody2D>() != null).ToList();
-                // foreach (var col in colliders)
-                // {
-                    // col.gameObject.GetComponent<Rigidbody2D>().AddForce(-force * Time.fixedDeltaTime, ForceMode2D.Force);
-                // }
-            // }
         }
 
         private void FixedUpdate()
         {
-            // _rigidbody.AddForce(_handToMouse.normalized * _handSpeed * Time.fixedDeltaTime, ForceMode2D.Force);
+            // if (_handToMouse.magnitude <= 0.01f) return;
+            // _rigidbody.AddForce(_handSpeed * Time.fixedDeltaTime * _handToMouse, ForceMode2D.Force);
             if (!_isHoldingObject) _rigidbody.MovePosition(_playerBody.position + _bodyToMouse); // allows sliding when contacting objects
             if (_isColliding || _isHoldingObject) ApplyForces();
         }
@@ -179,12 +189,8 @@ namespace _Project.Scripts
         {
             _isColliding = true;
             var dot = Mathf.Max(Vector2.Dot(Vector2.up, col.GetContact(0).normal), 0f);
-            // Debug.Log(dot);
             _playerBody.velocity *= 1 - dot;
             _playerBody.gravityScale = 1 - dot;
-
-            // _playerBody.velocity = Vector2.zero;
-            // _playerBody.gravityScale = 0;
         }
 
         private void OnCollisionStay2D(Collision2D col)
@@ -201,7 +207,7 @@ namespace _Project.Scripts
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawSphere((Vector2) Camera.main.ScreenToWorldPoint(Input.mousePosition), 0.3f);
+            Gizmos.DrawSphere((Vector2) Camera.main.ScreenToWorldPoint(Input.mousePosition), 0.1f);
             Gizmos.DrawLine(_playerBody.position, _playerBody.position + _bodyToMouse);
             Gizmos.color = Color.green;
             Gizmos.DrawLine(_playerBody.position, _rigidbody.position);

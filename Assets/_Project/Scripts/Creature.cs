@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,8 +7,16 @@ namespace _Project.Scripts
 {
     public abstract class Creature : MonoBehaviour, IDamageable
     {
-        [SerializeField] private float health;
-        private float _health;
+        [SerializeField] protected float health;
+        public event Action<float> OnDamaged;
+        public event Action OnDeath;
+        protected float _health;
+
+        protected void OnEnable()
+        {
+            OnDamaged += TakeDamage;
+            OnDeath += Die;
+        }
 
         protected void Awake()
         {
@@ -19,13 +28,19 @@ namespace _Project.Scripts
             _health -= damage;
             if (_health <= 0)
             {
-                OnDeath();
+                OnDeath?.Invoke();
             }
         }
 
-        protected void OnDeath()
+        protected void Die()
         {
             Destroy(gameObject);
+        }
+        
+        protected void OnDisable()
+        {
+            OnDamaged -= TakeDamage;
+            OnDeath -= Die;
         }
     }
 }
