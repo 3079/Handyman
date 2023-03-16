@@ -1497,6 +1497,15 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
+      time: 0.25873846
+      value: 0.89750993
+      inSlope: 0.43304288
+      outSlope: 0.43304288
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.17695215
+    - serializedVersion: 3
       time: 1
       value: 1
       inSlope: 0
@@ -1545,13 +1554,43 @@ MonoBehaviour:
   dummy: {fileID: 2029285730}
   hitCD: 8
   sfx:
+  - name: explosion1
+    clip: {fileID: 8300000, guid: bf7ed8496fa9ed04f8b3ddf763b0514e, type: 3}
+    volume: 1
+    pitch: 0
+    source: {fileID: 0}
+  - name: pin1
+    clip: {fileID: 8300000, guid: fec8032e22808584d863991da4eed592, type: 3}
+    volume: 1
+    pitch: 0
+    source: {fileID: 0}
+  - name: pin2
+    clip: {fileID: 8300000, guid: 9470501c3055df14caca624fc5999f49, type: 3}
+    volume: 1
+    pitch: 0
+    source: {fileID: 0}
   - name: slap1
-    clip: {fileID: 8300000, guid: de00f4acd0eb9664ab9e937315121a68, type: 3}
+    clip: {fileID: 8300000, guid: 3fd2ff5a76fa2e94fb9c11a5868e3e04, type: 3}
     volume: 1
     pitch: 0
     source: {fileID: 0}
   - name: slap2
     clip: {fileID: 8300000, guid: 3c9ad5a32c8f15244bff567c0b9f5a14, type: 3}
+    volume: 1
+    pitch: 0
+    source: {fileID: 0}
+  - name: slap3
+    clip: {fileID: 8300000, guid: ad58023850dbe8c43b0b98e327e308a9, type: 3}
+    volume: 1
+    pitch: 0
+    source: {fileID: 0}
+  - name: slap4
+    clip: {fileID: 8300000, guid: 1c486e9be516f6e4f9651006f136aba0, type: 3}
+    volume: 1
+    pitch: 0
+    source: {fileID: 0}
+  - name: oof1
+    clip: {fileID: 8300000, guid: 641b965e65c759a4a958ae888ebae69b, type: 3}
     volume: 1
     pitch: 0
     source: {fileID: 0}

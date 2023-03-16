@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+
+
 using UnityEngine;
 
 namespace _Project.Scripts
@@ -33,11 +35,13 @@ namespace _Project.Scripts
 
         private IEnumerator Trigger()
         {
+            AudioManager.instance.PlaySFX("pin");
             while (timer > 0)
             {
                 timer -= Time.deltaTime;
                 yield return null;
             }
+            AudioManager.instance.PlaySFX("explosion");
 
             var contacts = new List<Collider2D>();
             blastZone.OverlapCollider(blastContactFilter, contacts);
@@ -60,9 +64,7 @@ namespace _Project.Scripts
                     damageableRb.AddForce(distanceCoefficient * blastForce * distance.normalized, ForceMode2D.Impulse);
                 }
             }
-
             Instantiate(explosion, transform.position, Quaternion.identity);
-            
             OnDestroyed?.Invoke(this);
             
             Destroy(gameObject);

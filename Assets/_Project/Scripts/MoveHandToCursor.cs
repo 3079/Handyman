@@ -84,6 +84,7 @@ namespace _Project.Scripts
                     contacts = contacts.Where(x => x.gameObject != gameObject).ToList();
                     if (contacts.Count != 0)
                     {
+                        AudioManager.instance.PlaySFX("slap");
                         var heldObject = contacts[0].gameObject;
                         _heldObjectRb = heldObject.GetComponentInParent<Rigidbody2D>();
                         _heldObjectJoint = _heldObjectRb.mass >= _playerBody.mass
