@@ -8,13 +8,14 @@ namespace _Project.Scripts
     public abstract class Creature : MonoBehaviour, IDamageable
     {
         [SerializeField] protected float health;
+        protected DamageFX _damageFX;
         public event Action<float> OnDamaged;
         public event Action OnDeath;
         protected float _health;
 
         protected void OnEnable()
         {
-            OnDamaged += TakeDamage;
+            // OnDamaged += TakeDamage;
             OnDeath += Die;
         }
 
@@ -25,7 +26,8 @@ namespace _Project.Scripts
 
         public void TakeDamage(float damage)
         {
-            _health -= damage;
+            // _health -= damage;
+            OnDamaged?.Invoke(damage);
             if (_health <= 0)
             {
                 OnDeath?.Invoke();
@@ -39,7 +41,7 @@ namespace _Project.Scripts
         
         protected void OnDisable()
         {
-            OnDamaged -= TakeDamage;
+            // OnDamaged -= TakeDamage;
             OnDeath -= Die;
         }
     }

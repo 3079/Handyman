@@ -84,7 +84,8 @@ namespace _Project.Scripts
                     contacts = contacts.Where(x => x.gameObject != gameObject).ToList();
                     if (contacts.Count != 0)
                     {
-                        _heldObjectRb = contacts[0].gameObject.GetComponentInParent<Rigidbody2D>();
+                        var heldObject = contacts[0].gameObject;
+                        _heldObjectRb = heldObject.GetComponentInParent<Rigidbody2D>();
                         _heldObjectJoint = _heldObjectRb.mass >= _playerBody.mass
                             ? _heldObjectHingeJoint
                             : _heldObjectFixedJoint;
@@ -92,11 +93,13 @@ namespace _Project.Scripts
                         _heldObjectJoint.connectedBody = _heldObjectRb;
                         _isHoldingObject = true;
                         _heldObjectJoint.autoConfigureConnectedAnchor = true;
-                        // проблема в том, что можно отталкиваться от предмета, который держишь в руке
                         _rigidbody.gravityScale = 0;
-                        var interactable = _heldObjectRb.GetComponentInParent<IInteractable>();
-                        if(interactable != null)
+                        var interactable = heldObject.GetComponentInParent<IInteractable>();
+                        if (interactable != null)
+                        {
                             interactable.Interact();
+                            interactable.OnDestroyed += ClearHeldObject;
+                        }
                     }
                     else
                     {
@@ -171,7 +174,8 @@ namespace _Project.Scripts
             if (_isHoldingObject)
             {
                 _heldObjectRb.AddForce(-force * Time.fixedDeltaTime, ForceMode2D.Force);
-                _rigidbody.AddForce((_rigidbody.mass / _rigidbody.mass + _heldObjectRb.mass) * _handSpeed * Time.fixedDeltaTime * _handToMouse.normalized, ForceMode2D.Force);
+                // _rigidbody.AddForce((_rigidbody.mass / _rigidbody.mass + _heldObjectRb.mass) * _handSpeed * Time.fixedDeltaTime * _handToMouse.normalized, ForceMode2D.Force);
+                _rigidbody.AddForce(_rigidbody.mass / (_rigidbody.mass + _heldObjectRb.mass) * _handSpeed * Time.fixedDeltaTime * _handToMouse.normalized, ForceMode2D.Force);
                 // _heldObjectRb.MovePosition(_rigidbody.position);
                 // _heldObjectJoint.anchor = transform.InverseTransformPoint(transform.position);
             }
@@ -204,15 +208,32 @@ namespace _Project.Scripts
             _playerBody.gravityScale = 1;
         }
 
+        private void ClearHeldObject(IInteractable interactable)
+        {
+            if (_isHoldingObject)
+            {
+                interactable.OnDestroyed -= ClearHeldObject;
+                _rigidbody.gravityScale = 1;
+                
+                _heldObjectRb = null;
+                if (_heldObjectJoint != null)
+                {
+                    _heldObjectJoint.connectedBody = null;
+                    _heldObjectJoint.enabled = false;
+                }
+                _isHoldingObject = false;
+            }
+        }
+
         private void OnDrawGizmos()
         {
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere((Vector2) Camera.main.ScreenToWorldPoint(Input.mousePosition), 0.1f);
-            Gizmos.DrawLine(_playerBody.position, _playerBody.position + _bodyToMouse);
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(_playerBody.position, _rigidbody.position);
-            Gizmos.color = Color.blue;
-            Gizmos.DrawLine(_playerBody.position, _playerBody.position - _handToMouse);
+            // Gizmos.color = Color.red;
+            // Gizmos.DrawSphere((Vector2) Camera.main.ScreenToWorldPoint(Input.mousePosition), 0.1f);
+            // Gizmos.DrawLine(_playerBody.position, _playerBody.position + _bodyToMouse);
+            // Gizmos.color = Color.green;
+            // Gizmos.DrawLine(_playerBody.position, _rigidbody.position);
+            // Gizmos.color = Color.blue;
+            // Gizmos.DrawLine(_playerBody.position, _playerBody.position - _handToMouse);
         }
     }
 }
